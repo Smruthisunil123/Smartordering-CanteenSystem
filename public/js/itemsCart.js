@@ -1,7 +1,3 @@
-// here ar esome of the bugs which are left to solve
-// 1- if quantity is 0 then also if we click on add item button then it add that item.
-// 2- we have to add a button on bill side through which we can remove the dish from the bill.
-
 const decrease = (itemNumber) => {
   var itemval = document.getElementById(itemNumber);
   if (itemval.value <= 0) {
@@ -24,18 +20,22 @@ const increase = (itemNumber) => {
 
 let arr = [];
 
-// to disable checkout button if no item is added.
-if(arr.length == 0){
+// To disable checkout button if no item is added
+if (arr.length == 0) {
   document.getElementById('checkOut').disabled = true;
 } else {
   document.getElementById('checkOut').disabled = false;
 }
 
 function addDish(element) {
-  //to enable checkout button.
+  console.log("Adding item with ID:", element);
+  if (!element) {
+    alert("Invalid item ID. Please try again.");
+    return;
+  }
+
   document.getElementById('checkOut').disabled = false;
 
-  console.log(element);
   let totalAmount = 0;
 
   let price = document.querySelector(`#price${element}`).innerHTML;
@@ -44,12 +44,32 @@ function addDish(element) {
   let title = document.getElementById(`name${element}`).innerHTML;
   let menu = document.getElementById(`menu${element}`).innerHTML;
 
-  if(quantity.value == 0){
+  console.log("Price:", price, "Quantity:", quantity.value, "Title:", title, "Menu:", menu);
+
+  if (quantity.value == 0) {
     alert("Add at least 1 item");
+    return;
   }
 
-  else{
   if (arr == null) {
+    arr = [];
+  }
+
+  let found = 0;
+
+  arr.forEach((ele) => {
+    if (ele.id == element) {
+      if ((Number(ele.q) + Number(quantity.value)) > 5) {
+        alert("Maximum 5 items only.");
+        ele.q = 5;
+      } else {
+        ele.q = Number(ele.q) + Number(quantity.value);
+      }
+      found = 1;
+    }
+  });
+
+  if (!found) {
     arr.push({
       id: element,
       t: title,
@@ -60,45 +80,20 @@ function addDish(element) {
     });
   }
 
-  let found = 0;
-
-  arr.forEach((ele) => {
-    if (ele.id == element) {
-      if((Number(ele.q) + Number(quantity.value))>5){
-        alert("Maximum 5 items only.");
-        ele.q = 5;
-      } else {
-      ele.q = Number(ele.q) + Number(quantity.value);
-      }
-      found = 1;
-    }
-  });
-
-  if (found == 1) {
-  } else {
-    arr.push({
-      id: element,
-      t: title,
-      p: Number(price),
-      q: quantity.value,
-      r: 0,
-      m: menu
-    });
-
-  }
+  console.log("Current cart array:", arr);
 
   document.getElementById("appendHere").innerHTML = "";
-let removeCount = 0;
+  let removeCount = 0;
   arr.forEach((ele) => {
     ele.r = removeCount;
-    
+
     let billElem = document.createElement("div");
     billElem.innerHTML = `<h4>${ele.t}</h4>
-  <div>
-      <div>Price :  ${ele.p}</div>
-      <div>Quantity : ${ele.q}</div>
-      <button class="btn btn-primary" onclick="removeDish(${removeCount})">🗑️</button>
-  </div>`;
+    <div>
+        <div>Price :  ${ele.p}</div>
+        <div>Quantity : ${ele.q}</div>
+        <button class="btn btn-primary" onclick="removeDish(${removeCount})">🗑️</button>
+    </div>`;
     billElem.className = "billItems";
     document.querySelector("#appendHere").append(billElem);
     totalAmount = totalAmount + ele.q * ele.p;
@@ -112,46 +107,38 @@ let removeCount = 0;
 
   productTotal.innerHTML = ` ${totalAmount}`;
   grandTotal.innerHTML = ` ${totalAmount}`;
-  document.getElementById("StringData").value = JSON.stringify({arr});
+  document.getElementById("StringData").value = JSON.stringify({ arr });
 
-  }
+  console.log("StringData value:", document.getElementById("StringData").value);
 }
 
-
-
-function removeDish(element){
-  console.log(element)
+function removeDish(element) {
+  console.log("Removing item with removeCount:", element);
   let totalAmount = 0;
 
-  let count = 0;
-  arr.forEach((ele) => {
-    if (ele.r == element) {
-      console.log(ele.q);
-      arr.splice(count,1);
-    }
-    count++;
-  });
-  document.getElementById("StringData").value = JSON.stringify({arr});
-  console.log(arr);
+  // Remove the item from the array
+  arr = arr.filter((ele) => ele.r !== element);
+
+  document.getElementById("StringData").value = JSON.stringify({ arr });
+  console.log("Updated cart array:", arr);
   document.getElementById("appendHere").innerHTML = "";
-  console.log('hello')
 
   let removeCount = 0;
   arr.forEach((ele) => {
+    ele.r = removeCount;
+
     let billElem = document.createElement("div");
-    billElem.innerHTML = `<h4 style="color:white;">${ele.t}</h4>
-  <div style="color:white;display:flex;align-items:center;">
-      <div>Price :  ${ele.p}</div>
-      <div>Quantity : ${ele.q}</div>
-      <button class="page-link btn" onclick="removeDish(${removeCount})"> 🗑️</button>
-     
-  </div>`;
+    billElem.innerHTML = `<h4>${ele.t}</h4>
+    <div>
+        <div>Price :  ${ele.p}</div>
+        <div>Quantity : ${ele.q}</div>
+        <button class="btn btn-primary" onclick="removeDish(${removeCount})">🗑️</button>
+    </div>`;
     billElem.className = "billItems";
-    // billElem.id = `r${element}`
     document.querySelector("#appendHere").append(billElem);
     totalAmount = totalAmount + ele.q * ele.p;
 
-    // quantity.value = 0;
+    removeCount++;
   });
 
   let productTotal = document.getElementById("product_total_amt");
@@ -160,12 +147,9 @@ function removeDish(element){
   productTotal.innerHTML = ` ${totalAmount}`;
   grandTotal.innerHTML = ` ${totalAmount}`;
 
-  
-// to disable checkout button if no arr is empty.
-if(arr.length == 0){
-  document.getElementById('checkOut').disabled = true;
-} else {
-  document.getElementById('checkOut').disabled = false;
-}
-
+  if (arr.length == 0) {
+    document.getElementById('checkOut').disabled = true;
+  } else {
+    document.getElementById('checkOut').disabled = false;
+  }
 }

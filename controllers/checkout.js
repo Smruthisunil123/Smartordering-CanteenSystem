@@ -46,7 +46,7 @@ module.exports = {
             _id : orderId,
             userName: userName,
             userId: userId, // need it to hover for database 
-            paytmUserName: "@ketanrtd713",
+            paytmUserName: "@smruhti",
             userEmail: userEmail,
             userPhone: userPhone,
             totalAmount : totalAmount,

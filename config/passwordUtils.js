@@ -1,22 +1,27 @@
 const crypto = require('crypto');
 
-// GENERATE SALT TO STORE IN DATABASE
+// Generate salt and hash for a password
 function genPassword(password) {
-    var salt = crypto.randomBytes(32).toString('hex');
-    var genHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex'); // Provides a synchronous Password-Based Key Derivation Function 2 (PBKDF2) implementation. A selected HMAC digest algorithm specified by digest is applied to derive a key of the requested byte length (keylen) from thepassword, salt and iterations.
+  // Generate a 32-byte (256-bit) salt
+  const salt = crypto.randomBytes(32).toString('hex');
+  // Use PBKDF2 to derive a hash from the password, salt, and iterations
+  const genHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
 
-    return {
-        salt: salt,
-        hash: genHash
-    }
+  return {
+    salt: salt,
+    hash: genHash
+  };
 }
 
-// VERIFY GIVEN SALT WITH THAT OF THE STORED IN DATABASE
+// Verify a password against the stored hash and salt
 function validPassword(password, hash, salt) {
-    var hashVerify = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex')
-    return hash === hashVerify // check the values with the database values if same then return true else false
+  // Recompute the hash using the provided password and stored salt
+  const hashVerify = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  // Compare the computed hash with the stored hash
+  return hash === hashVerify;
 }
 
-
-module.exports.validPassword = validPassword;
-module.exports.genPassword = genPassword;
+module.exports = {
+  validPassword,
+  genPassword
+};

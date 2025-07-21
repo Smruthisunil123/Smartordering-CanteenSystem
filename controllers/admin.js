@@ -121,13 +121,13 @@ module.exports = {
             const transporter = nodemailer.createTransport({
                 service:"hotmail",
                 auth:{
-                    user:"ketanrandom@outlook.com", //admin username
-                    pass:"Random17547@", //admin password
+                    user:"smruthibonageri@gmail.com", //admin username
+                    pass:"1234", //admin password
                 }
             });
 
             const options = {
-                from:"ketanrandom@outlook.com",
+                from:"smruthibonageri@gmail.com",
                 to:docs.userEmail,
                 subject:"Order (" +docs._id+") is ready",
                 text:"Hello "+docs.userName +", \nWe hope you are enjoying Diwali !! \n\nYour Order with order id  "+ docs._id+ "is ready on counter. Take it before it is late :|"

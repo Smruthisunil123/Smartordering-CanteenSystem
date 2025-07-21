@@ -1,0 +1,58 @@
+<!-- views/add-item.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" href="/images/logoForMeal.png" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/profile.css" />
+  <link href="/css/style.css" rel="stylesheet" />
+</head>
+<body class="d-flex flex-column h-100">
+  <div class="container form-signin mt-5 localbyme">
+    <h2 class="mt-4 mb-3 fw-normal text-bold text-center">
+      <i class="bi bi-plus-circle me-2"></i>Add New Item
+    </h2>
+    <% if (messages.error) { %>
+      <div class="alert alert-danger" role="alert">
+        <%= messages.error %>
+      </div>
+    <% } %>
+    <% if (messages.success) { %>
+      <div class="alert alert-success" role="alert">
+        <%= messages.success %>
+      </div>
+    <% } %>
+    <form method="POST" action="/admin/add-item" class="form-floating">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name" name="name" placeholder="Item Name" required />
+        <label for="name">Item Name</label>
+      </div>
+      <div class="form-floating mb-3">
+        <input type="number" step="0.01" class="form-control" id="price" name="price" placeholder="Price" required />
+        <label for="price">Price (₹)</label>
+      </div>
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="description" name="description" placeholder="Description" />
+        <label for="description">Description</label>
+      </div>
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="category" name="category" placeholder="Category" />
+        <label for="category">Category</label>
+      </div>
+      <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" id="available" name="available" checked />
+        <label class="form-check-label" for="available">Available</label>
+      </div>
+      <button class="w-100 btn btn-primary mb-3" type="submit">Add Item</button>
+    </form>
+    <a href="/items" class="btn btn-secondary w-100 mb-3">Back to Menu</a>
+  </div>
+</body>
+</html>

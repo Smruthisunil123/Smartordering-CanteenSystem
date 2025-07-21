@@ -1,101 +1,110 @@
-const genPassword = require('../config/passwordUtils').genPassword
-const User = require("../config/dbSchema").User
+const { genPassword } = require('../config/passwordUtils');
+const { User } = require("../config/dbSchema");
 
-
+// CONTROLLERS
 module.exports = {
-    
-    // HOME PAGE
-    homePageGetReq : (req, res)=>{
-        res.render("home")
-    },
+  // HOME PAGE
+  homePageGetReq: (req, res) => {
+    res.render("home");
+  },
 
-    // SIGNUP PAGE
-    signUpGetReq : (req, res)=>{
-        res.render("signup")
-    },
+  // SIGNUP PAGE
+  signUpGetReq: (req, res) => {
+    res.render("signup");
+  },
 
-    // GET SIGNUP CREDENTIALS (USERNAME AND PASSWORD)
-    signUpPostReq : (req, res, next) => {
-        const saltHash = genPassword(req.body.password) // see how to use the custom names for this
-        console.log(req.body)
-        console.log(req.body.username)
-        const salt = saltHash.salt
-        const hash = saltHash.hash
-        const firstname = req.body.firstname
-        const lastname = req.body.lastname
-        const phone = req.body.phone
+  // POST: Handle signup form submission
+  signUpPostReq: async (req, res) => {
+    try {
+      const { username, password, firstname, lastname, phone } = req.body;
+      const email = username; // Form uses email as username
 
-        const newUser = new User({
-            _id: req.body.username,
-            hash: hash,
-            salt: salt,
-            admin: false, // Right now manually check 
-            firstname: firstname,
-            lastname: lastname,
-            phone: phone
-        })
-        // check if user exists or not , there may be chances that false user so OTP or like that stuff later
-        User.find({_id: req.body.username}, (err, doc)=>{
-            console.log(doc +" doc")
-            if(doc == null || doc.length === 0){
-                newUser.save()
-                .then((user)=>{
-                console.log(user)
-                res.redirect("/login") // go to signIn page 
-                })
-            } else {
-                // res.send(doc)
-                res.send("username already exists")
-            }
-        })
+      // Check if user already exists (by username or email)
+      const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+      if (existingUser) {
+        return res.render('signup', { error: "Username or email already exists" });
+      }
 
-        
-    },
-    
-    // LOGIN PAGE
-    loginGetReq : (req, res)=>{
-        res.render("login")
-    },
+      // Generate salt and hash for the password
+      const saltHash = genPassword(password);
+      const salt = saltHash.salt;
+      const hash = saltHash.hash;
 
-    // GET LOGIN CREDENTIALS ( USERNAME AND PASSWORD )
-    loginPostReq : (req, res)=>{
-        // NO NEED AS PASSPORT HANDLES THAT 
-    },
+      // Create new user
+      const newUser = new User({
+        username,
+        email,
+        hash,
+        salt,
+        admin: false,
+        firstname,
+        lastname,
+        phone
+      });
 
-    // LOGOUT POST REQ.
-    logOut : (req, res, next) => {
-        req.logout(); // USING PASSPORT
-        res.redirect('/');
-    },
-
-    // GET PROFILE
-    getProfile : (req, res)=>{
-        // get other informations from database
-        // Only come to this route if authenticated
-        const username = req.user._id;
-        console.log(username)
-
-        User.find({_id : username },(err, user)=>{
-            // i think see it in req.user yes
-            console.log(user)
-            // don't send all information including salt
-            if(user)
-            res.render("profile", {user: user[0]})
-            
-        })
-    },
-
-    // POST REQ. UPDATE PROFILE INFORMATION ( CRUCIAL WHEN UPDATING USERNAME OR PASSWORD )
-    updateProfile : (req, res)=>{
-        const username = req.params.username
-        const firstname = req.body.firstname
-        const lastname = req.body.lastname
-        const phone = req.body.phone
-
-        console.log(req.body)
-        User.findOneAndUpdate({_id: username}, {firstname:firstname, lastname: lastname, phone: phone}, {upsert: true}, function(err, doc) {
-            if (err) return res.send(500, {error: err});
-            return res.redirect('/profile')
-        });
+      // Save to MongoDB
+      await newUser.save();
+      res.redirect("/login");
+    } catch (error) {
+      console.error("Error during signup:", error);
+      res.render('signup', { error: "Server error during signup" });
     }
-}
+  },
+
+  // LOGIN PAGE
+  loginGetReq: (req, res) => {
+    res.render("login");
+  },
+
+  // LOGIN POST REQ (Handled by Passport)
+  loginPostReq: (req, res) => {
+    // No need to implement, Passport handles this
+  },
+
+  // LOGOUT
+  logOut: (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.redirect('/');
+    });
+  },
+
+  // GET PROFILE
+  getProfile: async (req, res) => {
+    try {
+      // Only accessible if authenticated (via isAuth middleware)
+      const username = req.user.username; // Updated to use username field
+      const user = await User.findOne({ username });
+      if (!user) {
+        return res.status(404).send("User not found");
+      }
+      res.render("profile", { user });
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).send("Server error");
+    }
+  },
+
+  // POST: Update profile information
+  updateProfile: async (req, res) => {
+    try {
+      const { username } = req.params;
+      const { firstname, lastname, phone } = req.body;
+
+      const updatedUser = await User.findOneAndUpdate(
+        { username },
+        { firstname, lastname, phone },
+        { new: true, runValidators: true }
+      );
+
+      if (!updatedUser) {
+        return res.status(404).send("User not found");
+      }
+
+      res.redirect('/profile');
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).send("Server error");
+    }
+  }
+};

@@ -1,55 +1,39 @@
-const mongoose = require("mongoose")
+const mongoose = require('mongoose');
 
-// SCHEMAS ( NEED TO REFACTOR TO REQUIRED SOME OF THEM )
-
-// ITEM ( FOR FOOD ITEMS )
 const itemSchema = new mongoose.Schema({
-    _id: Date,
-    items: {
-      type: Array, 
-    },
-  });
-  
-const Item = mongoose.model("Item", itemSchema);
-  
-
-// ORDER ( FOR ORDER OF ARRAY OF ITEMS )
-const orderSchema = new mongoose.Schema({
-  _id: String, // ORDER ID
-  userName: String,
-  userEmail: String,
-  userPhone: String,
-  allItems: Array, // ARRAY OF ITEMS (FIX)
-  totalAmount: Number,
-  orderStatus: String, // CAN I HAVE ENUM HERE 
-  paymentStatus: String,
-  timeWhenOrderPlaced: Date
-})
-
-const Order =  mongoose.model("Order", orderSchema);
-
-// USER ( CUSTOMER WHO GOING TO BUY ITEMS )
-const UserSchema = new mongoose.Schema({
-  _id: String, // IT IS USERNAME
-  hash: String,
-  salt: String,
-  admin: Boolean,
-  firstname: String,
-  lastname: String,
-  phone: String,
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  category: { type: String, required: true },
+  available: { type: Boolean, default: true },
+  description: { type: String },
 });
 
-const reviewSchema = new mongoose.Schema({
-  _id: String,
-  review: String
-})
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  hash: { type: String, required: true },
+  salt: { type: String, required: true },
+  admin: { type: Boolean, default: false },
+  firstname: { type: String },
+  lastname: { type: String },
+  phone: { type: String },
+});
 
-const User = new mongoose.model('User', UserSchema);
+const orderSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  items: [{
+    itemId: { type: String, required: true },
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+  }],
+  total: { type: Number, required: true },
+  status: { type: String, default: 'Pending' },
+  createdAt: { type: Date, default: Date.now },
+});
 
-// ____________________________________________________________________________________________________________________________________
+const Item = mongoose.model('Item', itemSchema);
+const User = mongoose.model('User', userSchema);
+const Order = mongoose.model('Order', orderSchema);
 
-module.exports = {
-    Item: Item,
-    Order: Order,
-    User: User
-}
+module.exports = { Item, User, Order };

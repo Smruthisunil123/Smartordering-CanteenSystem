@@ -1,122 +1,112 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
-const dbSchema = require('../config/dbSchema')
+const dbSchema = require('../config/dbSchema');
 const Item = dbSchema.Item;
 
 module.exports = {
   // GET all the items sorted by date
-  // TODO : Sorting with date
-  getItems: (req, res) => {
+  getItems: async (req, res) => {
+    try {
+      const dateObj = new Date();
+      const month = dateObj.getUTCMonth() + 1;
+      const day = dateObj.getUTCDate();
+      const year = dateObj.getUTCFullYear();
+      const currDate = `${year}-${month}-${day}`;
 
-    var dateObj = new Date();
-    var month = dateObj.getUTCMonth() + 1; //months from 1-12
-    var day = dateObj.getUTCDate();
-    var year = dateObj.getUTCFullYear();
-    let currDate = year + "-" + month + "-" + day; // today's date automatically from server
+      console.log(currDate);
 
-    console.log(currDate)
+      const docs = await Item.find({ _id: currDate });
 
-    Item.find({_id: currDate}, function (err, docs) {
-
-      if(docs.length === 0){
-      res.render("itemsCart", {items: []})
+      if (docs.length === 0) {
+        res.render("itemsCart", { items: [] });
       } else {
-      const items = docs[0].items;
-     
-
-      console.log(items)
-      res.render("itemsCart", {items: items})
+        const items = docs[0].items;
+        console.log(items);
+        res.render("itemsCart", { items: items });
       }
-       
-    });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Server error");
+    }
   },
 
-  
-  getItemsOnDate: (req, res)=>{
-    Item.find({_id: req.params.date}, function (err, docs) {
-      // res.send(docs);
-      res.render("itemsCart")
-    });
-    
+  getItemsOnDate: async (req, res) => {
+    try {
+      const docs = await Item.find({ _id: req.params.date });
+      res.render("itemsCart", { items: docs.length ? docs[0].items : [] });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Server error");
+    }
   },
 
-  // ADD, REMOVE, UPDATE item
-  postItems: (req, res) => { 
+  postItems: async (req, res) => {
     const { itemId, date, func, name, price, type, available, menu } = req.body;
 
-    var dateObj = new Date();
-    var month = dateObj.getUTCMonth() + 1; //months from 1-12
-    var day = dateObj.getUTCDate();
-    var year = dateObj.getUTCFullYear();
-    let currDate = day + "-" + month + "-" + year;
+    try {
+      const dateObj = new Date();
+      const month = dateObj.getUTCMonth() + 1;
+      const day = dateObj.getUTCDate();
+      const year = dateObj.getUTCFullYear();
+      const currDate = `${day}-${month}-${year}`;
 
-    if (func == "addItem") {
-      let isDateAddedInDb = true;
+      if (func === "addItem") {
+        const doc = await Item.findById(date);
+        if (!doc) {
+          const newItem = new Item({ _id: date, items: [] });
+          await newItem.save();
+        }
 
-      // check if date already in DB
-      Item.findById(date, (err, doc) => {
-        if (doc == null) isDateAddedInDb = false;
-      });
+        const itemToBeAdded = {
+          itemId: crypto.randomBytes(6).toString("hex"),
+          type,
+          name,
+          menu,
+          price,
+          available,
+          lastUpdated: dateObj,
+          filename: "1665893609061-by-undefined-images.jpeg"
+        };
 
-      if (!isDateAddedInDb) {
-        const item = new Item({
-          _id: date,
-          items: [],
-        });
-        item.save();
+        const updated = await Item.findByIdAndUpdate(
+          date,
+          { $push: { items: itemToBeAdded } },
+          { new: true, upsert: true }
+        );
+
+        console.log(updated);
       }
 
-      const itemToBeAdded = {
-        itemId: crypto.randomBytes(6).toString("hex"),
-        type: type,
-        name: name,
-        menu: menu,
-        price: price,
-        available: available,
-        lastUpdated: dateObj,
-        filename: "1665893609061-by-undefined-images.jpeg"
-      };
-
-      // add validations like if item already added by seeing names of it.
-      Item.findByIdAndUpdate(
-        date,
-        { $push: { items: itemToBeAdded } },
-        { new: true, upsert: true },
-        function (err, managerparent) {
-          if (err) throw err;
-          console.log(managerparent); // updated value here
-        }
-      );
-    }
-
-    if (func === "removeItem") {
-      // no need to implement now
-    }
-
-    if (func === "updateItem") {
-
-      // TODO : add validations on each data items, make middleware for that
-      Item.updateOne(
-        {_id: date, "items.itemId":itemId},
-        {
+      if (func === "updateItem") {
+        const updated = await Item.updateOne(
+          { _id: date, "items.itemId": itemId },
+          {
             $set: {
-                "items.$.name": name,
-                "items.$.price": price,
-                "items.$.type": type,
-                "items.$.menu": menu,
-                "items.$.available": available,
-                "items.$.lastUpdated": new Date(),
-               // add other items to update
-             }
-        },function(err, docs){
-          console.log(docs); 
-        }
-    )
+              "items.$.name": name,
+              "items.$.price": price,
+              "items.$.type": type,
+              "items.$.menu": menu,
+              "items.$.available": available,
+              "items.$.lastUpdated": new Date()
+            }
+          }
+        );
+        console.log(updated);
+      }
+
+      if (func === "removeItem") {
+        // TODO: Implement remove functionality
+      }
+
+      res.send({
+        success: "true",
+        message: "post request handled successfully"
+      });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).send({ success: "false", message: err.message });
     }
-    res.send({
-      success: "true",
-      message: "post request handled successfuly"
-    });
   },
 };

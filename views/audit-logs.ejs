@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { padding: 20px; }
+    .audit-section { margin-top: 20px; }
+    pre { background: #f8f9fa; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Audit Logs</h1>
+    <p><a href="/" class="btn btn-secondary">Back to Home</a></p>
+
+    <!-- Flash Messages -->
+    <% if (messages.error) { %>
+      <div class="alert alert-danger"><%= messages.error %></div>
+    <% } %>
+    <% if (messages.success) { %>
+      <div class="alert alert-success"><%= messages.success %></div>
+    <% } %>
+
+    <!-- Audit Logs Table -->
+    <div class="audit-section">
+      <% if (auditLogs && auditLogs.length > 0) { %>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Operation</th>
+              <th>Document</th>
+              <th>Timestamp</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% auditLogs.forEach(log => { %>
+              <tr>
+                <td><%= log.operation %></td>
+                <td><pre><%= JSON.stringify(log.document, null, 2) %></pre></td>
+                <td><%= log.timestamp.toISOString() %></td>
+                <td>
+                  <form action="/admin/audit-logs/delete/<%= log._id %>" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this log?');">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <p>No audit logs available.</p>
+      <% } %>
+    </div>
+
+    <!-- Additional Admin Features -->
+    <div class="audit-section">
+      <h3>Filter Logs by Operation</h3>
+      <div class="btn-group" role="group">
+        <a href="/admin/audit-logs/filter/INSERT" class="btn btn-primary">Insert</a>
+        <a href="/admin/audit-logs/filter/UPDATE" class="btn btn-primary">Update</a>
+        <a href="/admin/audit-logs/filter/DELETE" class="btn btn-primary">Delete</a>
+        <a href="/admin/audit-logs" class="btn btn-secondary">Clear Filter</a>
+      </div>
+    </div>
+
+    <div class="audit-section">
+      <h3>Filter Logs by Date Range</h3>
+      <form action="/admin/audit-logs/date-range" method="POST" class="row g-3">
+        <div class="col-md-5">
+          <label for="startDate" class="form-label">Start Date</label>
+          <input type="date" class="form-control" id="startDate" name="startDate" required>
+        </div>
+        <div class="col-md-5">
+          <label for="endDate" class="form-label">End Date</label>
+          <input type="date" class="form-control" id="endDate" name="endDate" required>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="audit-section">
+      <h3>Search Logs by User ID</h3>
+      <form action="/admin/audit-logs/search-user" method="POST" class="row g-3">
+        <div class="col-md-10">
+          <input type="text" class="form-control" name="userId" placeholder="Enter User ID" required>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="audit-section">
+      <h3>Clear Old Logs</h3>
+      <form action="/admin/audit-logs/clear-old" method="POST" class="row g-3">
+        <div class="col-md-10">
+          <input type="number" class="form-control" name="days" placeholder="Enter number of days (e.g., 30)" min="1" required>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Are you sure you want to clear old logs?');">Clear</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="audit-section">
+      <a href="/admin/audit-logs/export" class="btn btn-success">Export Logs as JSON</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

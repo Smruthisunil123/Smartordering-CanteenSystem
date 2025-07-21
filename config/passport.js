@@ -1,49 +1,56 @@
-const passport = require('passport');
-const validPassword = require('./passwordUtils').validPassword;
-const LocalStrategy = require('passport-local').Strategy;
-const User = require("./dbSchema").User;
+// config/passport.js
+const LocalStrategy = require("passport-local").Strategy;
+const { User } = require("./dbSchema");
+const { validPassword } = require("./passwordUtils");
 
-// We will be using LocalStratagy and it requires verify callback
-// username, password GIVEN FROM FORM (SAME NAME) and done is the callback function that it wants
-// This values populated by passport js
+module.exports = function(passport) {
+  passport.use(
+    new LocalStrategy({ usernameField: "email" }, (email, password, done) => {
+      console.log("Attempting to authenticate user:", email);
+      User.findOne({ username: email })
+        .then((user) => {
+          if (!user) {
+            console.log("User not found:", email);
+            return done(null, false, { message: "Invalid username or password" });
+          }
 
-// VERIFY CALLBACK TO GIVE TO PASSPORT
-const verifyCallBack = (username, password, done) =>{
+          console.log("User found:", user.username);
+          const isValid = validPassword(password, user.hash, user.salt);
+          console.log("Password valid:", isValid);
 
-    User.findOne({_id: username})
-        .then((user)=>{
-
-            if(!user){ return done(null, false)}
-
-            const isValid = validPassword(password, user.hash, user.salt)
-
-            if(isValid){
-                return done(null, user);
-            } else {
-                return done(null, false);
-            }
+          if (isValid) {
+            console.log("Authentication successful for:", user.username);
+            return done(null, user);
+          } else {
+            console.log("Password incorrect for:", user.username);
+            return done(null, false, { message: "Invalid username or password" });
+          }
         })
-        .catch((err)=>{
-            done(err);
-        })
-}
+        .catch((err) => {
+          console.error("Error during authentication:", err);
+          done(err);
+        });
+    })
+  );
 
-const strategy = new LocalStrategy(verifyCallBack)
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
 
-passport.use(strategy); // Here we are using passport 
-
-// Now add some code that will be used for user to get into session and get out of the session
-// PASSPORT WORKS ON SESSIONS
-passport.serializeUser((userId, done)=>{
-    done(null, userId)
-})
-
-passport.deserializeUser((userId, done)=>{
-    User.findById(userId)
-        .then((user)=>{
-            done(null, user)
-        })
-        .catch((err)=>{
-            done(err)
-        })
-})
+ passport.deserializeUser((id, done) => {
+  console.log("Deserializing user with ID:", id);
+  User.findById(id)
+    .then((user) => {
+      if (!user) {
+        console.log("User not found during deserialization:", id);
+        return done(null, false); // Fail deserialization gracefully
+      }
+      console.log("User deserialized:", user.username);
+      done(null, user);
+    })
+    .catch((err) => {
+      console.error("Error during deserialization:", err);
+      done(err);
+    });
+});
+};

@@ -1,8 +1,8 @@
 
 const upload = require("../middlewares/upload");
 const dbConfig = {
-  url: "mongodb+srv://admin-ketan:Ketan@cluster0.odeen.mongodb.net/", // for local development
-  // url: `mongodb+srv://admin-ketan:Ketan@cluster0.odeen.mongodb.net/`, // for production, what was the error then
+  url: 'mongodb+srv://smruthibonageri:Smru123@cluster0.cxv8hat.mongodb.net/canteenDB?retryWrites=true&w=majority&appName=Cluster0', // for local development
+  // url: 'mongodb+srv://smruthibonageri:Smru123@cluster0.cxv8hat.mongodb.net/canteenDB?retryWrites=true&w=majority&appName=Cluster0', // for production, what was the error then
   // url: process.env.DB_STRING_FILES, // getting error in this idk
   database: "CanteenItems",
   imgBucket: "MyImagesBucket",
